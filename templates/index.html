@@ -6,9 +6,9 @@
 {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "{{ site_name }} - 最新视频",
-    "description": "{{ site_description }}",
-    "url": "{{ site_url }}/",
+    "name": "{{ ui.site_name }} - {{ ui.section_latest }}",
+    "description": "{{ ui.site_description }}",
+    "url": "{{ site_url }}/home/",
     "numberOfItems": {{ videos|length }},
     "itemListElement": [
         {% for v in videos %}
@@ -27,18 +27,18 @@
 
 {% block content %}
 <section class="hero">
-    <h1>{{ site_name }}</h1>
-    <p>{{ site_description }}</p>
+    <h1 data-lang-key="hero_title">{{ ui.hero_title }}</h1>
+    <p data-lang-key="hero_subtitle">{{ ui.hero_subtitle }}</p>
 </section>
 
 {% if categories %}
 <section class="section">
-    <h2>视频分类</h2>
+    <h2 data-lang-key="section_categories">{{ ui.section_categories }}</h2>
     <div class="category-grid">
         {% for cat, count in categories %}
         <a href="/genre/{{ cat }}/" class="category-card">
-            <span class="category-name">{{ cat_names.get(cat, cat) }}</span>
-            <span class="category-count">{{ count }} 个视频</span>
+            <span class="category-name" data-cat-key="{{ cat }}">{{ cat_name(cat, lang) }}</span>
+            <span class="category-count">{{ count }} <span data-lang-key="cat_videos">{{ ui.cat_videos }}</span></span>
         </a>
         {% endfor %}
     </div>
@@ -46,7 +46,7 @@
 {% endif %}
 
 <section class="section">
-    <h2>最新视频</h2>
+    <h2 data-lang-key="section_latest">{{ ui.section_latest }}</h2>
     <div class="video-grid">
         {% for v in videos %}
         <article class="video-card">
@@ -62,7 +62,7 @@
                 </div>
                 <div class="video-info">
                     <h3 class="video-title">{{ v.title }}</h3>
-                    <span class="video-meta">{{ cat_names.get(v.category, v.category) }} · {{ v.platform_name }}</span>
+                    <span class="video-meta"><span data-cat-key="{{ v.category }}">{{ cat_name(v.category, lang) }}</span> · {{ v.platform_name }}</span>
                 </div>
             </a>
         </article>
@@ -72,14 +72,15 @@
 
 {% set hb = home_base | default('/home/') %}
 {% if total_pages > 1 %}
-<nav class="pagination" aria-label="分页导航">
+<nav class="pagination" aria-label="Pagination">
     {% if page > 1 %}
-    <a href="{% if page == 2 %}{{ hb }}{% else %}{{ hb }}page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
+    <a href="{% if page == 2 %}{{ hb }}{% else %}{{ hb }}page/{{ page - 1 }}/{% endif %}" class="pagination-prev" data-lang-key="pagination_prev">{{ ui.pagination_prev }}</a>
     {% endif %}
     <span class="pagination-info">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="{{ hb }}page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
+    <a href="{{ hb }}page/{{ page + 1 }}/" class="pagination-next" data-lang-key="pagination_next">{{ ui.pagination_next }}</a>
     {% endif %}
 </nav>
 {% endif %}
+
 {% endblock %}

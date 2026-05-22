@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}"{{ tag }}" 标签视频 - 在线观看 - {{ site_name }}{% endblock %}
-{% block description %}标签"{{ tag }}"相关的免费在线视频，共{{ videos|length }}个视频，每日更新精彩内容。{% endblock %}
-{% block keywords %}{{ tag }},在线观看,免费视频{% endblock %}
+{% block title %}{{ tag }} Videos - Watch Online - {{ ui.site_name }}{% endblock %}
+{% block description %}Watch {{ videos|length }} videos tagged "{{ tag }}" online for free. Daily updates of exciting short clips.{% endblock %}
+{% block keywords %}{{ tag }},watch online,free videos,{{ ui.site_keywords }}{% endblock %}
 
-{% block og_title %}"{{ tag }}" 标签视频 - 在线观看{% endblock %}
-{% block og_description %}标签"{{ tag }}"相关的免费在线视频，精选精彩内容。{% endblock %}
+{% block og_title %}{{ tag }} Videos - Watch Online{% endblock %}
+{% block og_description %}Watch videos tagged "{{ tag }}" online for free. Curated short clips.{% endblock %}
 {% block og_url %}{{ site_url }}/tag/{{ tag }}/{% endblock %}
 {% block canonical_url %}{{ site_url }}/tag/{{ tag }}/{% endblock %}
 
@@ -14,8 +14,8 @@
 {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "标签: {{ tag }}",
-    "description": "共 {{ videos|length }} 个相关视频",
+    "name": "Tag: {{ tag }}",
+    "description": "{{ videos|length }} videos tagged {{ tag }}",
     "url": "{{ site_url }}/tag/{{ tag }}/",
     "numberOfItems": {{ videos|length }},
     "itemListElement": [
@@ -36,23 +36,23 @@
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "首页", "item": "{{ site_url }}/"},
-        {"@type": "ListItem", "position": 2, "name": "标签: {{ tag }}", "item": "{{ site_url }}/tag/{{ tag }}/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ site_url }}/"},
+        {"@type": "ListItem", "position": 2, "name": "Tag: {{ tag }}", "item": "{{ site_url }}/tag/{{ tag }}/"}
     ]
 }
 </script>
 {% endblock %}
 
 {% block content %}
-<nav class="breadcrumb" aria-label="面包屑导航">
-    <a href="/home/">首页</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/home/" data-lang-key="breadcrumb_home">{{ ui.breadcrumb_home }}</a>
     <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">标签：{{ tag }}</span>
+    <span class="breadcrumb-current">{{ ui.tag_label }}: {{ tag }}</span>
 </nav>
 
 <section class="section">
-    <h1>标签：{{ tag }}</h1>
-    <p class="section-desc">共 {{ videos|length }} 个相关视频</p>
+    <h1>{{ ui.tag_label }}: {{ tag }}</h1>
+    <p class="section-desc">{{ videos|length }} {{ ui.tag_videos }}</p>
 
     <div class="video-grid">
         {% for v in videos %}
@@ -69,7 +69,7 @@
                 </div>
                 <div class="video-info">
                     <h3 class="video-title">{{ v.title }}</h3>
-                    <span class="video-meta">{{ cat_names.get(v.category, v.category) }} · {{ v.platform_name }}</span>
+                    <span class="video-meta"><span data-cat-key="{{ v.category }}">{{ cat_name(v.category, lang) }}</span> · {{ v.platform_name }}</span>
                 </div>
             </a>
         </article>
@@ -78,13 +78,13 @@
 </section>
 
 {% if total_pages > 1 %}
-<nav class="pagination" aria-label="分页导航">
+<nav class="pagination" aria-label="Pagination">
     {% if page > 1 %}
-    <a href="{% if page == 2 %}/tag/{{ tag }}/{% else %}/tag/{{ tag }}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
+    <a href="{% if page == 2 %}/tag/{{ tag }}/{% else %}/tag/{{ tag }}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev" data-lang-key="pagination_prev">{{ ui.pagination_prev }}</a>
     {% endif %}
     <span class="pagination-info">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="/tag/{{ tag }}/page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
+    <a href="/tag/{{ tag }}/page/{{ page + 1 }}/" class="pagination-next" data-lang-key="pagination_next">{{ ui.pagination_next }}</a>
     {% endif %}
 </nav>
 {% endif %}

@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ default_lang }}" data-lang="{{ default_lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ site_name }}</title>
-    <meta name="description" content="{{ site_description }}">
-    <meta name="keywords" content="{{ site_keywords }}">
+    <title>{{ ui.site_name }}</title>
+    <meta name="description" content="{{ ui.site_description }}">
+    <meta name="keywords" content="{{ ui.site_keywords }}">
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph -->
-    <meta property="og:site_name" content="{{ site_name }}">
+    <meta property="og:site_name" content="{{ ui.site_name }}">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ site_name }}">
-    <meta property="og:description" content="{{ site_description }}">
+    <meta property="og:title" content="{{ ui.site_name }}">
+    <meta property="og:description" content="{{ ui.site_description }}">
     <meta property="og:url" content="{{ site_url }}/">
 
     <!-- Canonical -->
@@ -20,6 +20,15 @@
 
     <link rel="stylesheet" href="/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+
+    <!-- Multi-language UI data -->
+    <script>
+    window.LANG_DATA = {
+        en: {{ ui | tojson }},
+        zh: {{ ui_zh | tojson }}
+    };
+    window.CAT_NAMES = {{ cat_names | tojson }};
+    </script>
 
     <style>
     /* ── Landing Reset ── */
@@ -88,6 +97,30 @@
         height: 100vh; padding: 24px;
         text-align: center;
     }
+
+    /* ── Language Switcher ── */
+    .landing-lang {
+        position: fixed; top: 16px; right: 16px; z-index: 20;
+    }
+    .landing-lang select {
+        appearance: none; -webkit-appearance: none;
+        background: rgba(255,255,255,0.08);
+        color: #9ca3af; font-size: 0.8rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 20px;
+        padding: 6px 28px 6px 14px;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        transition: border-color 0.2s, color 0.2s;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 10px center; background-size: 8px;
+    }
+    .landing-lang select:hover {
+        border-color: rgba(79,70,229,0.4);
+        color: #e0e0e0;
+    }
+    .landing-lang select:focus { outline: none; border-color: #4f46e5; }
+    .landing-lang select option { background: #1a1a2e; color: #e0e0e0; }
 
     /* ── Brand ── */
     .landing-brand {
@@ -234,11 +267,18 @@
     <div class="landing-orb"></div>
     <div class="landing-grid"></div>
 
+    <div class="landing-lang">
+        <select id="lang-switcher" aria-label="Language">
+            <option value="en" {% if default_lang == 'en' %}selected{% endif %}>English</option>
+            <option value="zh" {% if default_lang == 'zh' %}selected{% endif %}>中文</option>
+        </select>
+    </div>
+
     <div class="landing-content">
         <div class="landing-brand">
             <span class="landing-brand-icon">🎬</span>
-            <h1 class="landing-title">{{ site_name }}</h1>
-            <p class="landing-subtitle">{{ site_description }}</p>
+            <h1 class="landing-title" data-lang-key="site_name">{{ ui.site_name }}</h1>
+            <p class="landing-subtitle" data-lang-key="site_description">{{ ui.site_description }}</p>
         </div>
 
         <div class="landing-cats">
@@ -248,15 +288,15 @@
                     {%- set icons = {"animals":"🐾","entertainment":"🎉","fitness":"💪","food":"🍜","gaming":"🎮","music":"🎵","sports":"⚽","tech":"💻","travel":"✈️"} -%}
                     {{- icons.get(cat, "📹") -}}
                 </span>
-                <span>{{ cat_names.get(cat, cat) }}</span>
+                <span data-cat-key="{{ cat }}">{{ cat_name(cat, lang) }}</span>
                 <span class="landing-cat-count">{{ count }}</span>
             </a>
             {% endfor %}
         </div>
 
         <div class="landing-btn-wrap">
-            <a href="/home/" class="landing-btn">
-                进入视频站
+            <a href="/home/" class="landing-btn" data-lang-key="enter_site">
+                {{ ui.enter_site }}
                 <span class="landing-btn-arrow">→</span>
             </a>
         </div>
@@ -264,21 +304,73 @@
         <div class="landing-stats">
             <div class="landing-stat">
                 <div class="landing-stat-num">{{ videos_count }}</div>
-                <div class="landing-stat-label">精选视频</div>
+                <div class="landing-stat-label" data-lang-key="stat_videos">{{ ui.stat_videos }}</div>
             </div>
             <div class="landing-stat">
                 <div class="landing-stat-num">{{ categories|length }}</div>
-                <div class="landing-stat-label">视频分类</div>
+                <div class="landing-stat-label" data-lang-key="stat_categories">{{ ui.stat_categories }}</div>
             </div>
             <div class="landing-stat">
                 <div class="landing-stat-num">{{ tags_count }}</div>
-                <div class="landing-stat-label">热门标签</div>
+                <div class="landing-stat-label" data-lang-key="stat_tags">{{ ui.stat_tags }}</div>
             </div>
         </div>
     </div>
 
-    <div class="landing-footer">
-        &copy; {{ site_name }}. 内容来自网络，仅供学习交流。
+    <div class="landing-footer" data-lang-key="footer_text">
+        {{ ui.footer_text }}
     </div>
+
+    <script>
+    (function() {
+        var switcher = document.getElementById('lang-switcher');
+        if (!switcher) return;
+
+        // Load saved language
+        var saved = localStorage.getItem('site_lang');
+        if (saved && saved !== document.documentElement.getAttribute('data-lang')) {
+            switcher.value = saved;
+            applyLang(saved);
+        }
+
+        switcher.addEventListener('change', function() {
+            var lang = this.value;
+            localStorage.setItem('site_lang', lang);
+            applyLang(lang);
+        });
+
+        function applyLang(lang) {
+            var data = window.LANG_DATA;
+            if (!data || !data[lang]) return;
+
+            var strings = data[lang];
+            document.documentElement.setAttribute('lang', lang);
+            document.documentElement.setAttribute('data-lang', lang);
+
+            // Update data-lang-key elements
+            document.querySelectorAll('[data-lang-key]').forEach(function(el) {
+                var key = el.getAttribute('data-lang-key');
+                if (strings[key]) {
+                    el.textContent = strings[key];
+                }
+            });
+
+            // Update data-cat-key elements (category names)
+            document.querySelectorAll('[data-cat-key]').forEach(function(el) {
+                var key = el.getAttribute('data-cat-key');
+                var pair = window.CAT_NAMES && window.CAT_NAMES[key];
+                if (pair) {
+                    el.textContent = lang === 'zh' ? pair[1] : pair[0];
+                }
+            });
+
+            // Update lang switcher options text
+            var optEn = switcher.querySelector('option[value="en"]');
+            var optZh = switcher.querySelector('option[value="zh"]');
+            if (optEn && strings.lang_en) optEn.textContent = strings.lang_en;
+            if (optZh && strings.lang_zh) optZh.textContent = strings.lang_zh;
+        }
+    })();
+    </script>
 </body>
 </html>

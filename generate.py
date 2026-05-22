@@ -119,10 +119,90 @@ def thumb_gradient(slug: str) -> str:
     return f'linear-gradient(135deg, {_c(0)}, {_c(6)})'
 
 
-def cat_display(cat: str) -> str:
-    """英文分类名 → 中文显示名"""
-    names = getattr(config, 'CATEGORY_NAMES', {})
-    return names.get(cat, cat)
+def cat_display(cat: str, lang: str = "en") -> str:
+    """英文分类名 → 指定语言的显示名"""
+    from config import CATEGORY_NAMES
+    pair = CATEGORY_NAMES.get(cat)
+    if not pair:
+        return cat
+    return pair[0] if lang == "en" else pair[1]
+
+
+def auto_classify(videos: list[dict]) -> list[dict]:
+    """根据视频标题和描述自动推断分类和标签"""
+    import re
+
+    # 关键词 → 分类映射（中英文混合，覆盖现有视频标题）
+    KEYWORD_CATEGORY = [
+        # gaming
+        (["game", "gaming", "gameplay", "playthrough", "攻略", "实况", "电竞", "游戏"], "gaming"),
+        # music
+        (["music", "song", "mv", "concert", "live", "音乐", "MV", "现场", "演唱会"], "music"),
+        # sports
+        (["sport", "soccer", "football", "basketball", "tennis", "race", "体育", "比赛", "集锦", "极限运动", "运动"], "sports"),
+        # travel
+        (["travel", "trip", "tour", "landscape", "nature", "scenery", "旅行", "旅游", "风景", "自然", "风光", "延时"], "travel"),
+        # food
+        (["food", "cook", "recipe", "cuisine", "美食", "烹饪", "制作", "探店", "小吃"], "food"),
+        # animals
+        (["animal", "pet", "cat", "dog", "cute", "动物", "宠物", "萌宠", "猫咪", "狗狗"], "animals"),
+        # tech
+        (["tech", "technology", "gadget", "review", "unboxing", "科技", "评测", "数码", "汽车"], "tech"),
+        # fitness
+        (["fitness", "workout", "exercise", "gym", "yoga", "健身", "运动", "锻炼", "教学"], "fitness"),
+        # entertainment (catch-all)
+        (["funny", "comedy", "prank", "搞笑", "幽默", "挑战", "魔术", "舞蹈", "表演", "创意", "短片", "动画"], "entertainment"),
+    ]
+
+    # 自动标签关键词
+    TAG_KEYWORDS = {
+        "搞笑": "funny", "幽默": "humor", "快乐": "happy",
+        "游戏": "gaming", "电竞": "esports", "攻略": "guide",
+        "音乐": "music", "MV": "mv", "现场": "live",
+        "体育": "sports", "比赛": "competition", "集锦": "highlights",
+        "旅行": "travel", "风景": "scenery", "自然": "nature",
+        "美食": "food", "烹饪": "cooking", "小吃": "street food",
+        "动物": "animals", "萌宠": "pets", "猫咪": "cats",
+        "科技": "tech", "评测": "review", "汽车": "cars",
+        "健身": "fitness", "运动": "workout", "教学": "tutorial",
+        "搞笑": "funny", "挑战": "challenge", "魔术": "magic",
+        "舞蹈": "dance", "表演": "performance", "创意": "creative",
+        "短片": "short film", "动画": "animation", "娱乐": "entertainment",
+        "精选": "精选", "推荐": "推荐", "精彩": "精彩",
+        "剪辑": "editing", "合集": "compilation",
+    }
+
+    for v in videos:
+        text = (v['title'] + ' ' + v['description']).lower()
+
+        # 自动判断分类
+        best_cat = None
+        best_score = 0
+        for keywords, category in KEYWORD_CATEGORY:
+            score = sum(1 for kw in keywords if kw.lower() in text)
+            if score > best_score:
+                best_score = score
+                best_cat = category
+
+        if best_cat and best_score > 0:
+            v['category'] = best_cat
+
+        # 自动生成标签（保留原有标签 + 新匹配的）
+        auto_tags = set(v['tags'])
+        for cn, en in TAG_KEYWORDS.items():
+            if cn in v['title'] + v['description']:
+                auto_tags.add(en)
+            if en in v['title'].lower() + v['description'].lower():
+                auto_tags.add(en)
+
+        # 清理空标签，限制数量
+        auto_tags = [t for t in auto_tags if t and t.strip()]
+        # 保持原有标签顺序，追加新标签
+        existing = list(dict.fromkeys(v['tags']))
+        new_tags = [t for t in auto_tags if t not in existing]
+        v['tags'] = existing + new_tags[:8]  # 最多新增8个
+
+    return videos
 
 
 def paginate(items: list, per_page: int):
@@ -230,7 +310,9 @@ def generate():
     )
 
     # 传递给所有模板的全局变量
-    cat_names = getattr(config, 'CATEGORY_NAMES', {})
+    default_lang = getattr(config, 'DEFAULT_LANG', 'en')
+    ui_en = config.get_ui('en')
+    ui_zh = config.get_ui('zh')
     globals = {
         'site_name': config.SITE_NAME,
         'site_description': config.SITE_DESCRIPTION,
@@ -238,13 +320,26 @@ def generate():
         'site_keywords': config.SITE_KEYWORDS,
         'analytics_id': getattr(config, 'ANALYTICS_ID', ''),
         'cloudflare_analytics_token': getattr(config, 'CLOUDFLARE_ANALYTICS_TOKEN', ''),
-        'cat_names': cat_names,
+        'cat_names': config.CATEGORY_NAMES,
+        'default_lang': default_lang,
+        'ui': ui_en,
+        'ui_zh': ui_zh,
+        'lang': default_lang,
+        'cat_name': lambda cat, lang='en': config.cat_name(cat, lang),
     }
+    # 添加 lang 到 Jinja2 全局函数
+    env.globals['cat_name'] = lambda cat, lang='en': config.cat_name(cat, lang)
+    env.globals['ui_get'] = lambda key, lang='en': config.get_ui(lang).get(key, key)
 
     # 加载视频数据
     csv_path = os.path.join(os.path.dirname(__file__), 'content', 'videos.csv')
     videos = load_videos(csv_path)
     print(f"加载 {len(videos)} 个视频")
+
+    # 自动分类和打标签（基于标题和描述中的关键词）
+    print("自动分类视频...")
+    auto_classify(videos)
+    print(f"  分类完成")
 
     # 提取所有视频平台的域名（用于 preconnect 预连接）
     embed_domains = set()
@@ -415,7 +510,7 @@ def generate():
     rss_parts.append(f'  <title>{xml_escape(config.SITE_NAME)}</title>')
     rss_parts.append(f'  <link>{xml_escape(site_url)}/</link>')
     rss_parts.append(f'  <description>{xml_escape(config.SITE_DESCRIPTION)}</description>')
-    rss_parts.append(f'  <language>zh-CN</language>')
+    rss_parts.append(f'  <language>en</language>')
     rss_parts.append(f'  <lastBuildDate>{datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")}</lastBuildDate>')
     rss_parts.append(f'  <atom:link href="{xml_escape(site_url)}/rss.xml" rel="self" type="application/rss+xml"/>')
     for v in reversed(videos):

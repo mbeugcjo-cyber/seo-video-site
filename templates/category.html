@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}{{ cat_names.get(category, category) }} 视频 - 在线观看 - {{ site_name }}{% endblock %}
-{% block description %}免费在线观看{{ cat_names.get(category, category) }}类视频，精选{{ videos|length }}个精彩{{ cat_names.get(category, category) }}短视频，每日更新。{% endblock %}
-{% block keywords %}{{ category }},在线观看,免费视频,{{ site_name }}{% endblock %}
+{% block title %}{{ cat_name(category, 'en') }} Videos - Watch Online - {{ ui.site_name }}{% endblock %}
+{% block description %}Watch {{ videos|length }} {{ cat_name(category, 'en') }} videos online for free. Curated short clips updated daily.{% endblock %}
+{% block keywords %}{{ category }},{{ cat_name(category, 'en') }},watch online,free videos,short clips{% endblock %}
 
-{% block og_title %}{{ cat_names.get(category, category) }} 视频 - 在线观看{% endblock %}
-{% block og_description %}免费在线观看{{ cat_names.get(category, category) }}类视频，精选精彩视频。{% endblock %}
+{% block og_title %}{{ cat_name(category, 'en') }} Videos - Watch Online{% endblock %}
+{% block og_description %}Watch {{ cat_name(category, 'en') }} videos online for free. Curated short clips.{% endblock %}
 {% block og_url %}{{ site_url }}/genre/{{ category }}/{% endblock %}
 {% block canonical_url %}{{ site_url }}/genre/{{ category }}/{% endblock %}
 
@@ -14,8 +14,8 @@
 {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "{{ cat_names.get(category, category) }} 视频",
-    "description": "共 {{ videos|length }} 个{{ cat_names.get(category, category) }}类视频",
+    "name": "{{ cat_name(category, 'en') }} Videos",
+    "description": "{{ videos|length }} {{ cat_name(category, 'en') }} videos",
     "url": "{{ site_url }}/genre/{{ category }}/",
     "numberOfItems": {{ videos|length }},
     "itemListElement": [
@@ -36,23 +36,23 @@
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "首页", "item": "{{ site_url }}/"},
-        {"@type": "ListItem", "position": 2, "name": {{ cat_names.get(category, category)|tojson }}, "item": "{{ site_url }}/genre/{{ category }}/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ site_url }}/"},
+        {"@type": "ListItem", "position": 2, "name": "{{ cat_name(category, 'en') }}", "item": "{{ site_url }}/genre/{{ category }}/"}
     ]
 }
 </script>
 {% endblock %}
 
 {% block content %}
-<nav class="breadcrumb" aria-label="面包屑导航">
-    <a href="/home/">首页</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/home/" data-lang-key="breadcrumb_home">{{ ui.breadcrumb_home }}</a>
     <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">{{ cat_names.get(category, category) }} 视频</span>
+    <span class="breadcrumb-current" data-cat-key="{{ category }}">{{ cat_name(category, lang) }}</span>
 </nav>
 
 <section class="section">
-    <h1>{{ cat_names.get(category, category) }} 视频</h1>
-    <p class="section-desc">共 {{ videos|length }} 个{{ cat_names.get(category, category) }}类视频</p>
+    <h1 data-cat-key="{{ category }}">{{ cat_name(category, lang) }}</h1>
+    <p class="section-desc">{{ videos|length }} <span data-cat-key="{{ category }}">{{ cat_name(category, lang) }}</span></p>
 
     <div class="video-grid">
         {% for v in videos %}
@@ -69,7 +69,7 @@
                 </div>
                 <div class="video-info">
                     <h3 class="video-title">{{ v.title }}</h3>
-                    <span class="video-meta">{{ v.platform_name }}</span>
+                    <span class="video-meta"><span data-cat-key="{{ v.category }}">{{ cat_name(v.category, lang) }}</span> · {{ v.platform_name }}</span>
                 </div>
             </a>
         </article>
@@ -78,13 +78,13 @@
 </section>
 
 {% if total_pages > 1 %}
-<nav class="pagination" aria-label="分页导航">
+<nav class="pagination" aria-label="Pagination">
     {% if page > 1 %}
-    <a href="{% if page == 2 %}/genre/{{ category }}/{% else %}/genre/{{ category }}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
+    <a href="{% if page == 2 %}/genre/{{ category }}/{% else %}/genre/{{ category }}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev" data-lang-key="pagination_prev">{{ ui.pagination_prev }}</a>
     {% endif %}
     <span class="pagination-info">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="/genre/{{ category }}/page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
+    <a href="/genre/{{ category }}/page/{{ page + 1 }}/" class="pagination-next" data-lang-key="pagination_next">{{ ui.pagination_next }}</a>
     {% endif %}
 </nav>
 {% endif %}

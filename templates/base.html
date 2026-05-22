@@ -1,50 +1,50 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ default_lang }}" data-lang="{{ default_lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ site_name }}{% endblock %}</title>
-    <meta name="description" content="{% block description %}{{ site_description }}{% endblock %}">
-    <meta name="keywords" content="{% block keywords %}{{ site_keywords }}{% endblock %}">
+    <title>{% block title %}{{ ui.site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ ui.site_description }}{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}{{ ui.site_keywords }}{% endblock %}">
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph -->
-    <meta property="og:site_name" content="{{ site_name }}">
+    <meta property="og:site_name" content="{{ ui.site_name }}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:title" content="{% block og_title %}{{ site_name }}{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}{{ site_description }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ ui.site_name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ ui.site_description }}{% endblock %}">
     <meta property="og:url" content="{% block og_url %}{{ site_url }}{% endblock %}">
     {% block og_image %}{% endblock %}
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block twitter_title %}{{ site_name }}{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}{{ site_description }}{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ ui.site_name }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ ui.site_description }}{% endblock %}">
     {% block twitter_image %}{% endblock %}
 
     <!-- Canonical URL -->
     <link rel="canonical" href="{% block canonical_url %}{{ site_url }}{% endblock %}">
 
-    <!-- Schema.org 结构化数据 -->
+    <!-- Schema.org -->
     {% block schema %}{% endblock %}
 
     <link rel="stylesheet" href="/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 
-    <!-- 预连接视频平台域名（加速 iframe 加载） -->
+    <!-- Preconnect video domains -->
     {% for domain in embed_domains %}
     <link rel="preconnect" href="https://{{ domain }}">
     <link rel="dns-prefetch" href="https://{{ domain }}">
     {% endfor %}
 
-    <!-- Schema.org WebSite（含站内搜索声明） -->
+    <!-- WebSite Schema -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "{{ site_name }}",
+        "name": "{{ ui.site_name }}",
         "url": "{{ site_url }}/",
-        "description": "{{ site_description }}",
+        "description": "{{ ui.site_description }}",
         "potentialAction": {
             "@type": "SearchAction",
             "target": {
@@ -73,13 +73,26 @@
     {% endif %}
 </head>
 <body>
+    <!-- Mulit-language UI data -->
+    <script>
+    window.LANG_DATA = {
+        en: {{ ui | tojson }},
+        zh: {{ ui_zh | tojson }}
+    };
+    window.CAT_NAMES = {{ cat_names | tojson }};
+    </script>
+
     <header class="header">
         <div class="container">
-            <a href="/" class="logo">{{ site_name }}</a>
+            <a href="/home/" class="logo" data-lang-key="site_name">{{ ui.site_name }}</a>
             <nav class="nav">
-                <a href="/home/">首页</a>
-                <a href="/search/" class="nav-search-link">搜索</a>
-                <a href="/sitemap.xml">站点地图</a>
+                <a href="/home/" data-lang-key="nav_home">{{ ui.nav_home }}</a>
+                <a href="/search/" data-lang-key="nav_search">{{ ui.nav_search }}</a>
+                <a href="/sitemap.xml" data-lang-key="nav_sitemap">{{ ui.nav_sitemap }}</a>
+                <select class="lang-switcher" id="lang-switcher" aria-label="Language">
+                    <option value="en" {% if default_lang == 'en' %}selected{% endif %}>{{ ui.lang_en }}</option>
+                    <option value="zh" {% if default_lang == 'zh' %}selected{% endif %}>{{ ui.lang_zh }}</option>
+                </select>
             </nav>
         </div>
     </header>
@@ -90,8 +103,63 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; {{ site_name }}. 内容来自网络，仅供学习交流。</p>
+            <p data-lang-key="footer_text">{{ ui.footer_text }}</p>
         </div>
     </footer>
+
+    <script>
+    (function() {
+        var switcher = document.getElementById('lang-switcher');
+        if (!switcher) return;
+
+        // Load saved language
+        var saved = localStorage.getItem('site_lang');
+        if (saved && saved !== document.documentElement.getAttribute('data-lang')) {
+            switcher.value = saved;
+            applyLang(saved);
+        }
+
+        switcher.addEventListener('change', function() {
+            var lang = this.value;
+            localStorage.setItem('site_lang', lang);
+            applyLang(lang);
+        });
+
+        function applyLang(lang) {
+            var data = window.LANG_DATA;
+            if (!data || !data[lang]) return;
+
+            var strings = data[lang];
+            document.documentElement.setAttribute('lang', lang);
+            document.documentElement.setAttribute('data-lang', lang);
+
+            // Update all elements with data-lang-key
+            document.querySelectorAll('[data-lang-key]').forEach(function(el) {
+                var key = el.getAttribute('data-lang-key');
+                if (strings[key]) {
+                    el.textContent = strings[key];
+                }
+            });
+
+            // Update all elements with data-cat-key (category names)
+            document.querySelectorAll('[data-cat-key]').forEach(function(el) {
+                var key = el.getAttribute('data-cat-key');
+                var pair = window.CAT_NAMES && window.CAT_NAMES[key];
+                if (pair) {
+                    el.textContent = lang === 'zh' ? pair[1] : pair[0];
+                }
+            });
+
+            // Update lang switcher options text
+            var optEn = switcher.querySelector('option[value="en"]');
+            var optZh = switcher.querySelector('option[value="zh"]');
+            if (optEn && strings.lang_en) optEn.textContent = strings.lang_en;
+            if (optZh && strings.lang_zh) optZh.textContent = strings.lang_zh;
+        }
+
+        // Expose applyLang globally so child pages can call it
+        window.applyLang = applyLang;
+    })();
+    </script>
 </body>
 </html>

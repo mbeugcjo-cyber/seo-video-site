@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}搜索视频 - {{ site_name }}{% endblock %}
-{% block description %}搜索免费在线视频，找到你感兴趣的精彩内容。{% endblock %}
-{% block keywords %}搜索,视频搜索,在线视频{% endblock %}
+{% block title %}{{ ui.search_title }} - {{ ui.site_name }}{% endblock %}
+{% block description %}{{ ui.search_desc }}{% endblock %}
+{% block keywords %}search,video search,{{ ui.site_keywords }}{% endblock %}
 
-{% block og_title %}搜索视频 - {{ site_name }}{% endblock %}
-{% block og_description %}搜索免费在线视频，找到你感兴趣的精彩内容。{% endblock %}
+{% block og_title %}{{ ui.search_title }} - {{ ui.site_name }}{% endblock %}
+{% block og_description %}{{ ui.search_desc }}{% endblock %}
 {% block og_url %}{{ site_url }}/search/{% endblock %}
 {% block canonical_url %}{{ site_url }}/search/{% endblock %}
 
@@ -13,7 +13,7 @@
 {
     "@context": "https://schema.org",
     "@type": "SearchResultsPage",
-    "name": "搜索视频 - {{ site_name }}",
+    "name": "{{ ui.search_title }} - {{ ui.site_name }}",
     "url": "{{ site_url }}/search/"
 }
 </script>
@@ -21,37 +21,47 @@
 
 {% block content %}
 <section class="section search-page">
-    <h1>搜索视频</h1>
-    <p class="section-desc">输入关键词搜索视频标题、标签或分类</p>
+    <h1 data-lang-key="search_title">{{ ui.search_title }}</h1>
+    <p class="section-desc" data-lang-key="search_desc">{{ ui.search_desc }}</p>
 
     <div class="search-box">
         <input type="text" id="search-input" class="search-input"
-               placeholder="输入关键词搜索..." autocomplete="off"
-               aria-label="搜索关键词">
-        <button class="search-btn" id="search-btn" aria-label="搜索">搜索</button>
+               placeholder="{{ ui.search_placeholder }}" autocomplete="off"
+               aria-label="{{ ui.search_placeholder }}">
+        <button class="search-btn" id="search-btn" aria-label="{{ ui.search_btn }}" data-lang-key="search_btn">{{ ui.search_btn }}</button>
     </div>
 
     <div id="search-results" class="search-results">
-        <div class="search-hint">输入关键词开始搜索</div>
+        <div class="search-hint" data-lang-key="search_hint">{{ ui.search_hint }}</div>
     </div>
 </section>
 
 <script>
 (function() {
+    // Language-aware string helper
+    function _(key, fallback) {
+        var lang = localStorage.getItem('site_lang') || 'en';
+        try {
+            var data = window.LANG_DATA;
+            if (data && data[lang] && data[lang][key] !== undefined) return data[lang][key];
+        } catch(e) {}
+        return fallback || key;
+    }
+
     var input = document.getElementById('search-input');
     var btn = document.getElementById('search-btn');
     var results = document.getElementById('search-results');
     var allVideos = [];
     var searchTimeout = null;
 
-    // 从 URL 参数读取初始关键词
+    // Read initial keyword from URL params
     var params = new URLSearchParams(window.location.search);
     var initQ = params.get('q') || '';
     if (initQ) {
         input.value = initQ;
     }
 
-    // 加载视频数据
+    // Load video data
     function loadVideos() {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '/videos.json', true);
@@ -64,21 +74,21 @@
                         doSearch(initQ);
                     }
                 } catch(e) {
-                    results.innerHTML = '<div class="search-error">加载视频数据失败</div>';
+                    results.innerHTML = '<div class="search-error">' + _('search_error') + '</div>';
                 }
             }
         };
         xhr.onerror = function() {
-            results.innerHTML = '<div class="search-error">网络错误，无法加载视频数据</div>';
+            results.innerHTML = '<div class="search-error">' + _('search_network_error') + '</div>';
         };
         xhr.send();
     }
 
-    // 执行搜索
+    // Perform search
     function doSearch(query) {
         query = query.trim().toLowerCase();
         if (!query) {
-            results.innerHTML = '<div class="search-hint">输入关键词开始搜索</div>';
+            results.innerHTML = '<div class="search-hint">' + _('search_hint') + '</div>';
             return;
         }
 
@@ -88,16 +98,16 @@
                 || (v.category && v.category.toLowerCase().indexOf(query) !== -1);
         });
 
-        // 更新 URL 参数（不刷新页面）
+        // Update URL without page reload
         var newUrl = window.location.pathname + '?q=' + encodeURIComponent(input.value.trim());
         window.history.replaceState({q: input.value.trim()}, '', newUrl);
 
         if (filtered.length === 0) {
-            results.innerHTML = '<div class="search-empty">没有找到与 "<strong>' + htmlEscape(input.value.trim()) + '</strong>" 相关的视频</div>';
+            results.innerHTML = '<div class="search-empty">' + _('search_no_results') + ' "<strong>' + htmlEscape(input.value.trim()) + '</strong>"</div>';
             return;
         }
 
-        var html = '<div class="search-count">找到 ' + filtered.length + ' 个相关视频</div>';
+        var html = '<div class="search-count">' + filtered.length + ' ' + _('search_results_found') + '</div>';
         html += '<div class="video-grid">';
         for (var i = 0; i < filtered.length; i++) {
             var v = filtered[i];
@@ -126,7 +136,7 @@
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // 防抖搜索
+    // Debounced search on input
     input.addEventListener('input', function() {
         if (searchTimeout) clearTimeout(searchTimeout);
         searchTimeout = setTimeout(function() {
@@ -134,7 +144,7 @@
         }, 300);
     });
 
-    // 回车搜索
+    // Enter key to search
     input.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             if (searchTimeout) clearTimeout(searchTimeout);
@@ -148,7 +158,7 @@
         input.focus();
     });
 
-    // 加载数据
+    // Load data
     loadVideos();
 })();
 </script>
