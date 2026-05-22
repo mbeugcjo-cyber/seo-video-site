@@ -70,14 +70,15 @@
     </div>
 </section>
 
+{% set hb = home_base | default('/home/') %}
 {% if total_pages > 1 %}
 <nav class="pagination" aria-label="分页导航">
     {% if page > 1 %}
-    <a href="{% if page == 2 %}/{% else %}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
+    <a href="{% if page == 2 %}{{ hb }}{% else %}{{ hb }}page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
     {% endif %}
     <span class="pagination-info">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="/page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
+    <a href="{{ hb }}page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
     {% endif %}
 </nav>
 {% endif %}

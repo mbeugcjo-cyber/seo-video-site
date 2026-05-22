@@ -276,23 +276,40 @@ def generate():
         cat_counts[v['category']] = cat_counts.get(v['category'], 0) + 1
     categories = sorted(cat_counts.items())  # [(cat, count), ...]
 
-    # ── 1. 首页（分页）──
+    # ── 0. 启动页（创意首页，点击后进入主站）──
+    print("生成启动页...")
+    tmpl_landing = env.get_template('landing.html')
+    # 计算标签数（先扫描所有视频的标签）
+    tags_set = set()
+    for v in videos:
+        for t in v['tags']:
+            tags_set.add(t)
+    html_landing = tmpl_landing.render(
+        **globals,
+        categories=categories,
+        videos_count=len(videos),
+        tags_count=len(tags_set),
+    )
+    write_html(os.path.join(out_dir, 'index.html'), html_landing)
+
+    # ── 1. 主站首页（分页，路径 /home/）
     per_page = config.VIDEOS_PER_PAGE
     sorted_videos = list(reversed(videos))  # 最新优先
     home_pages = paginate(sorted_videos, per_page)
-    print(f"生成首页（共 {len(home_pages)} 页）...")
+    print(f"生成主站首页（共 {len(home_pages)} 页，路径 /home/）...")
     tmpl_home = env.get_template('index.html')
     for page_num, page_videos, total_pages in home_pages:
         if page_num == 1:
-            out_path = os.path.join(out_dir, 'index.html')
+            out_path = os.path.join(out_dir, 'home', 'index.html')
         else:
-            out_path = os.path.join(out_dir, 'page', str(page_num), 'index.html')
+            out_path = os.path.join(out_dir, 'home', 'page', str(page_num), 'index.html')
         html_out = tmpl_home.render(
             **globals,
             videos=page_videos,
             categories=categories,
             page=page_num,
             total_pages=total_pages,
+            home_base='/home/',
         )
         write_html(out_path, html_out)
 
@@ -355,10 +372,13 @@ def generate():
     sitemap_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
     sitemap_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
 
-    # 首页（含分页）
+    # 启动页
+    sitemap_parts.append(_sitemap_url(f'{site_url}/', '1.0', today_str))
+
+    # 主站首页（含分页）
     for p in range(1, len(home_pages) + 1):
-        url = f'{site_url}/' if p == 1 else f'{site_url}/page/{p}/'
-        sitemap_parts.append(_sitemap_url(url, '1.0', today_str))
+        url = f'{site_url}/home/' if p == 1 else f'{site_url}/home/page/{p}/'
+        sitemap_parts.append(_sitemap_url(url, '0.9', today_str))
 
     # 搜索页
     sitemap_parts.append(_sitemap_url(f'{site_url}/search/', '0.5', today_str))
@@ -419,8 +439,8 @@ Sitemap: {site_url}/sitemap.xml
 """
     write_html(os.path.join(out_dir, 'robots.txt'), robots)
 
-    # Cloudflare Pages _redirects: /page/1/ → /
-    redirects = "/page/1/* /:splat 301"
+    # Cloudflare Pages _redirects
+    redirects = "/page/1/* /home/:splat 301"
     write_html(os.path.join(out_dir, '_redirects'), redirects)
 
     # ── 8. 404 页面 ──
