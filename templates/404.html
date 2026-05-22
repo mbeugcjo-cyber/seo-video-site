@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}页面未找到 - {{ site_name }}{% endblock %}
+{% block description %}抱歉，您访问的页面不存在。返回首页继续浏览。{% endblock %}
+{% block canonical_url %}{{ site_url }}/{% endblock %}
+
+{% block content %}
+<div class="page-404">
+    <h1>404</h1>
+    <p>抱歉，您访问的页面不存在。</p>
+    <a href="/" class="btn-home">返回首页</a>
+</div>
+{% endblock %}

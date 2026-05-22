@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ cat_names.get(category, category) }} 视频 - 在线观看 - {{ site_name }}{% endblock %}
+{% block description %}免费在线观看{{ cat_names.get(category, category) }}类视频，精选{{ videos|length }}个精彩{{ cat_names.get(category, category) }}短视频，每日更新。{% endblock %}
+{% block keywords %}{{ category }},在线观看,免费视频,{{ site_name }}{% endblock %}
+
+{% block og_title %}{{ cat_names.get(category, category) }} 视频 - 在线观看{% endblock %}
+{% block og_description %}免费在线观看{{ cat_names.get(category, category) }}类视频，精选精彩视频。{% endblock %}
+{% block og_url %}{{ site_url }}/genre/{{ category }}/{% endblock %}
+{% block canonical_url %}{{ site_url }}/genre/{{ category }}/{% endblock %}
+
+{% block schema %}
+{% if videos %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "{{ cat_names.get(category, category) }} 视频",
+    "description": "共 {{ videos|length }} 个{{ cat_names.get(category, category) }}类视频",
+    "url": "{{ site_url }}/genre/{{ category }}/",
+    "numberOfItems": {{ videos|length }},
+    "itemListElement": [
+        {% for v in videos %}
+        {
+            "@type": "ListItem",
+            "position": {{ loop.index }},
+            "url": "{{ site_url }}/watch/{{ v.slug }}/",
+            "name": {{ v.title|tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endif %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "首页", "item": "{{ site_url }}/"},
+        {"@type": "ListItem", "position": 2, "name": {{ cat_names.get(category, category)|tojson }}, "item": "{{ site_url }}/genre/{{ category }}/"}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/">首页</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ cat_names.get(category, category) }} 视频</span>
+</nav>
+
+<section class="section">
+    <h1>{{ cat_names.get(category, category) }} 视频</h1>
+    <p class="section-desc">共 {{ videos|length }} 个{{ cat_names.get(category, category) }}类视频</p>
+
+    <div class="video-grid">
+        {% for v in videos %}
+        <article class="video-card">
+            <a href="/watch/{{ v.slug }}/">
+                <div class="video-thumb">
+                    {% if v.thumbnail %}
+                    <img src="{{ v.thumbnail }}" alt="{{ v.title }}" loading="lazy">
+                    {% else %}
+                    <div class="video-thumb--auto" style="background: {{ v.thumb_gradient }};">
+                        <span class="video-thumb-label">{{ v.title }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title">{{ v.title }}</h3>
+                    <span class="video-meta">{{ v.platform_name }}</span>
+                </div>
+            </a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="分页导航">
+    {% if page > 1 %}
+    <a href="{% if page == 2 %}/genre/{{ category }}/{% else %}/genre/{{ category }}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
+    {% endif %}
+    <span class="pagination-info">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="/genre/{{ category }}/page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

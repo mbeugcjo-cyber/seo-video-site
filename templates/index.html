@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block schema %}
+{% if videos %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "{{ site_name }} - 最新视频",
+    "description": "{{ site_description }}",
+    "url": "{{ site_url }}/",
+    "numberOfItems": {{ videos|length }},
+    "itemListElement": [
+        {% for v in videos %}
+        {
+            "@type": "ListItem",
+            "position": {{ loop.index }},
+            "url": "{{ site_url }}/watch/{{ v.slug }}/",
+            "name": {{ v.title|tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>{{ site_name }}</h1>
+    <p>{{ site_description }}</p>
+</section>
+
+{% if categories %}
+<section class="section">
+    <h2>视频分类</h2>
+    <div class="category-grid">
+        {% for cat, count in categories %}
+        <a href="/genre/{{ cat }}/" class="category-card">
+            <span class="category-name">{{ cat_names.get(cat, cat) }}</span>
+            <span class="category-count">{{ count }} 个视频</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="section">
+    <h2>最新视频</h2>
+    <div class="video-grid">
+        {% for v in videos %}
+        <article class="video-card">
+            <a href="/watch/{{ v.slug }}/">
+                <div class="video-thumb">
+                    {% if v.thumbnail %}
+                    <img src="{{ v.thumbnail }}" alt="{{ v.title }}" loading="lazy">
+                    {% else %}
+                    <div class="video-thumb--auto" style="background: {{ v.thumb_gradient }};">
+                        <span class="video-thumb-label">{{ v.title }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title">{{ v.title }}</h3>
+                    <span class="video-meta">{{ cat_names.get(v.category, v.category) }} · {{ v.platform_name }}</span>
+                </div>
+            </a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="分页导航">
+    {% if page > 1 %}
+    <a href="{% if page == 2 %}/{% else %}/page/{{ page - 1 }}/{% endif %}" class="pagination-prev">‹ 上一页</a>
+    {% endif %}
+    <span class="pagination-info">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="/page/{{ page + 1 }}/" class="pagination-next">下一页 ›</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

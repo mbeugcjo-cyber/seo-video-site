@@ -1,0 +1,17 @@
+# 生成的站点文件（每次 generate.py 重新生成）
+output/
+
+# 部署打包文件
+deploy.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.venv/
+
+# 系统
+.DS_Store
+Thumbs.db
