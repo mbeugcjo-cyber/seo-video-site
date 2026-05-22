@@ -31,6 +31,31 @@
     <link rel="stylesheet" href="/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 
+    <!-- 预连接视频平台域名（加速 iframe 加载） -->
+    {% for domain in embed_domains %}
+    <link rel="preconnect" href="https://{{ domain }}">
+    <link rel="dns-prefetch" href="https://{{ domain }}">
+    {% endfor %}
+
+    <!-- Schema.org WebSite（含站内搜索声明） -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "{{ site_name }}",
+        "url": "{{ site_url }}/",
+        "description": "{{ site_description }}",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "{{ site_url }}/search/?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+
     {% if analytics_id %}
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ analytics_id }}"></script>
@@ -53,6 +78,7 @@
             <a href="/" class="logo">{{ site_name }}</a>
             <nav class="nav">
                 <a href="/">首页</a>
+                <a href="/search/" class="nav-search-link">搜索</a>
                 <a href="/sitemap.xml">站点地图</a>
             </nav>
         </div>

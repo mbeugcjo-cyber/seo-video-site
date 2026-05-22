@@ -12,6 +12,7 @@
 import csv, os, sys, html, json, shutil, datetime, hashlib, math
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
+from urllib.parse import urlparse
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -245,6 +246,17 @@ def generate():
     videos = load_videos(csv_path)
     print(f"加载 {len(videos)} 个视频")
 
+    # 提取所有视频平台的域名（用于 preconnect 预连接）
+    embed_domains = set()
+    for v in videos:
+        try:
+            domain = urlparse(v['embed_url']).hostname
+            if domain:
+                embed_domains.add(domain)
+        except Exception:
+            pass
+    globals['embed_domains'] = sorted(embed_domains)
+
     # 为每个视频添加缩略图渐变色
     for v in videos:
         v['thumb_gradient'] = thumb_gradient(v['slug'])
@@ -348,6 +360,9 @@ def generate():
         url = f'{site_url}/' if p == 1 else f'{site_url}/page/{p}/'
         sitemap_parts.append(_sitemap_url(url, '1.0', today_str))
 
+    # 搜索页
+    sitemap_parts.append(_sitemap_url(f'{site_url}/search/', '0.5', today_str))
+
     # 分类页（含分页）
     for cat, _ in categories:
         cat_vids = [v for v in videos if v['category'] == cat]
@@ -413,6 +428,12 @@ Sitemap: {site_url}/sitemap.xml
     tmpl_404 = env.get_template('404.html')
     html_404 = tmpl_404.render(**globals)
     write_html(os.path.join(out_dir, '404.html'), html_404)
+
+    # ── 9. 搜索页（纯前端搜索，使用 videos.json）──
+    print("生成搜索页...")
+    tmpl_search = env.get_template('search.html')
+    html_search = tmpl_search.render(**globals)
+    write_html(os.path.join(out_dir, 'search', 'index.html'), html_search)
 
     # ── 10. 导出视频映射 JSON（供自动化工具使用） ──
     mapping = []
