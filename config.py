@@ -56,4 +56,9 @@ EMBED_MAP = {
         "embed_url": "https://videzz.net/{file_code}",
         "watch_url": "https://videzz.net/{file_code}",
     },
+    "upbolt": {
+        "name": "UpBolt",
+        "embed_url": "https://upbolt.to/e/{file_code}",
+        "watch_url": "https://upbolt.to/{file_code}",
+    },
 }
